@@ -311,10 +311,10 @@ popt = np.round(popt, 4)
 perr = np.round(perr, 5)
 
 print('Coefficients are: \n')
-print('Rayleigh multiplier = ', popt[0], '+', perr[0], '('+str(np.round(perr[0]/popt[0] * 100, 3))+'%)')
-print('Ozone multiplier = ', popt[1], '+', perr[1], '('+str(np.round(perr[1]/popt[1] * 100, 3))+'%)')
-print('A0 = ', popt[2], '+', perr[2], '('+str(np.round(perr[2]/popt[2] * 100, 3))+'%)')
-print('Alpha = ', popt[3], '+', perr[3], '('+str(np.round(perr[3]/popt[3] * 100, 3))+'%)')
+print('Rayleigh multiplier = ', popt[0], '+/-', perr[0], '('+str(np.round(perr[0]/popt[0] * 100, 3))+'%)')
+print('Ozone multiplier = ', popt[1], '+/-', perr[1], '('+str(np.round(perr[1]/popt[1] * 100, 3))+'%)')
+print('A0 = ', popt[2], '+/-', perr[2], '('+str(np.round(perr[2]/popt[2] * 100, 3))+'%)')
+print('Alpha = ', popt[3], '+/-', perr[3], '('+str(np.round(perr[3]/popt[3] * 100, 3))+'%)')
 
 modfit = fitfunc(microwave[0], *popt)  # fitted model using calculated parameters
 
