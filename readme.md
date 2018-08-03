@@ -2,9 +2,9 @@
 
 This software package is designed to correct the effects of atmopsheric extinction on stellar flux data.
 
-##Functions
+## Functions
 
-###Load Data
+### Load Data
 
 ```python
 load_data(file_directory, spectrograph_order):
