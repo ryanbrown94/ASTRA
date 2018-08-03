@@ -20,9 +20,6 @@ removed_stars = set(config.removed_stars)
 h = config.height
 
 
-# define global functions
-
-
 # convert photon counts to magnitude
 def magnitude(photon_count):
     return -2.5*np.log10(photon_count) + 15.0
@@ -75,17 +72,17 @@ def color(x):  # assign each star a unique color
            7: 'C6',  # pink
            8: 'C7',  # gray
            9: 'C8',  # yellow
-           0: 'C9'}  # light blue
+           10: 'C9'}  # light blue
 
-    return [n2c[int(str(number)[-1])] for number in x]
+    return [n2c[(number)] for number in x]
 
 
 # begin program
 
 
-def load_data(file_directory, spectrograph_order):
-    files = glob.glob((file_directory + '*-' + spectrograph_order + '.fits'))
+def load_data(file_directory, spectrograph_order, weighting):
 
+    files = sorted(glob.glob((file_directory + '*-' + spectrograph_order + '.fits')))
     filelist = []  # generate empty arrays to fill in for loop
     starlist = []
     data = []
@@ -96,6 +93,8 @@ def load_data(file_directory, spectrograph_order):
 
     upper_bound = None
     lower_bound = None
+
+    print('Loading data...\n')
 
     for file in files:
         print(str(file) + '\n', end='', flush=True)  # prints each file name as it loads
@@ -123,12 +122,18 @@ def load_data(file_directory, spectrograph_order):
         data_tmp = data_tmp[lower_bound:upper_bound]  # truncate wavelength array
         data.append(data_tmp)
         wavelength.append(xrefval + (np.arange(len(data_tmp)) + 1 - xrefpix) * xinc + (lower_bound * xinc))
-        weights.append(raw_data[lower_bound:upper_bound])
+        if weighting == True:
+            weights.append(raw_data[lower_bound:upper_bound])
+        elif weighting == False:
+            weights.append(1.0)
+        else:
+            raise Exception('Please select either True or False for weighting')
         hdulist.close()
 
+    observations, number_waves = np.shape(wavelength)  # extracts observation and wavelength data
     increment = fits.open(files[0])[0].header['CDELT1']
     airmass = np.array(airmass)
-    wavelength = np.array(wavelength)  # convert to numpy arrays
+    wavelength = np.array(wavelength[lower_bound:upper_bound])  # convert to numpy arrays
     data = np.array(data)
     weights = np.array(weights)
 
@@ -143,11 +148,11 @@ def load_data(file_directory, spectrograph_order):
     starlist = np.asfarray(starlist)
 
     if len(removed_stars) == 0:
-        print('No stars removed\n')
+        print('\nNo stars removed\n')
     else:
-        print('Removed Stars:', removed_stars, '\n')
+        print('\nRemoved Stars:', list(removed_stars), '\n')
 
-    observations, number_waves = np.shape(wavelength)  # extracts observation and wavelength data
+    starlist = np.delete(starlist, np.where(starlist == list(removed_stars)))
 
     star = {}
 
@@ -157,3 +162,17 @@ def load_data(file_directory, spectrograph_order):
         star[i] = star[i][:, 0]
 
     return data, wavelength, airmass, time, weights, starlist, ext_stars, star, observations, number_waves, increment
+
+
+def plot_bouguer(data, wavelength, airmass, starlist, star, ext_stars):
+    for i in range(1, len(starlist), 1):
+        plt.plot(airmass[i], magnitude(data[i, 0]), 'o', c=color(starlist)[i])
+    for j in ext_stars:
+        XX, YY, r, p, e = stats.linregress(airmass[star[j]], magnitude(data[star[j], 0]))
+        plt.plot(airmass[star[j]], XX * airmass[star[j]] + YY, c=color(star)[int(j-1)])
+    plt.gca().invert_yaxis()
+    plt.title('Bouguer Diagram (@ ' + str(np.min(wavelength[0])) + 'A)')
+    plt.xlabel('Airmass')
+    plt.ylabel('Magnitude')
+    plt.tight_layout()
+    plt.show()

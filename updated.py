@@ -126,9 +126,10 @@ for file in files:
     weights.append(raw_data[lower_bound:upper_bound])
     hdulist.close()
 
+observations, number_waves = np.shape(wavelength)
 increment = fits.open(files[0])[0].header['CDELT1']
 airmass = np.array(airmass)
-wavelength = np.array(wavelength)  # convert to numpy arrays
+wavelength = np.array(wavelength[lower_bound:upper_bound])  # convert to numpy arrays
 data = np.array(data)
 weights = np.array(weights)
 
@@ -151,7 +152,7 @@ if len(removed_stars) == 0:
 else:
     print('Removed Stars:', removed_stars, '\n')
 
-observations, number_waves = np.shape(wavelength)  # extracts observation and wavelength data
+starlist = np.delete(starlist, np.where(starlist == list(removed_stars)))
 
 star = {}
 
@@ -164,11 +165,11 @@ print(observations, 'observations, each over', number_waves, 'wavelengths \n')
 print('Wavelength Range:', np.nanmin(wavelength), '-', np.nanmax(wavelength), 'Angstroms\n')
 print('Wavelength Step:', increment, 'Angstroms\n')
 
-for i in range(1, 275, 1):
+for i in range(1, len(starlist), 1):
     plt.plot(airmass[i], magnitude(data[i, 0]), 'o', c=color(starlist)[i])
-for j in range(1, 11, 1):
+for j in ext_stars:
     XX, YY, r, p, e = stats.linregress(airmass[star[j]], magnitude(data[star[j], 0]))
-    plt.plot(airmass[star[j]], XX*airmass[star[j]] + YY, c=color(star)[j-1])
+    plt.plot(airmass[star[j]], XX*airmass[star[j]] + YY, c=color(star)[int(j-1)])
 plt.gca().invert_yaxis()
 plt.title('Bouguer Diagram (@ '+str(np.min(wavelength[0][lower_bound:upper_bound]))+'A)')
 plt.xlabel('Airmass')
@@ -179,21 +180,21 @@ plt.show()
 k0b = {}
 m0b = {}
 for j in range(number_waves):
-    for i in range(1, 11, 1):
+    for i in ext_stars:
         k0b[i, j], m0b[i, j], _, _, _ = stats.linregress(airmass[star[i]], magnitude(data[star[i], j]))
 
-star_k = {}
-star_mag = {}
-for j in range(1, 11, 1):
-    for i in range(0, 786, 1):
-        star_k[j, i] = k0b[j, i]
-        star_mag[j, i] = m0b[j, i]
-
-star_k = np.fromiter(star_k.values(), dtype=float)
-star_k = np.reshape(star_k, (10, 786))
-star_mag = np.fromiter(star_mag.values(), dtype=float)
-star_mag = np.reshape(star_mag, (10, 786))
-star_k_avg = np.average(star_k, axis=0)
+# star_k = {}
+# star_mag = {}
+# for j in range(1, 11, 1):
+#     for i in range(0, 786, 1):
+#         star_k[j, i] = k0b[j, i]
+#         star_mag[j, i] = m0b[j, i]
+#
+# star_k = np.fromiter(star_k.values(), dtype=float)
+# star_k = np.reshape(star_k, (10, 786))
+# star_mag = np.fromiter(star_mag.values(), dtype=float)
+# star_mag = np.reshape(star_mag, (10, 786))
+# star_k_avg = np.average(star_k, axis=0)
 
 # set up fitting matrices
 
@@ -342,23 +343,6 @@ plt.show()
 # print('\nNew removed stars are: ', new_removed_stars)
 
 # TODO Finish removal criteria
-
-averaged_data = np.average(d_mat, axis=1)
-for i in range(1, 11, 1):
-    plt.plot(t_mat[star[i]], averaged_data[star[i]], 'o', c=color(star)[i-1])
-plt.gca().invert_yaxis()
-plt.title('Observations of each star (averaged over all wavelengths)')
-plt.xlabel('Time')
-plt.ylabel('Magnitude')
-plt.show()
-for i in range(1, 11, 1):
-    plt.plot(X_mat[star[i]], averaged_data[star[i]], 'o', c=color(star)[i-1])
-plt.gca().invert_yaxis()
-plt.title('Observations of each star (averaged over all wavelengths)')
-plt.xlabel('Airmass')
-plt.ylabel('Magnitude')
-plt.show()
-
 # TODO automated quality control
 # TODO passbands
 # TODO output extinction corrected results
